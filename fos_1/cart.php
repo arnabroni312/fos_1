@@ -18,18 +18,23 @@
             $userid=$_SESSION['fosuid'];
             //genrating order number
             $orderno= mt_rand(100000000, 999999999);
-            $lati=$_POST('latitude');
-            $longi=$_POST('longitude');
+            $lati=$_POST['latitude'];
+            $longi=$_POST['longitude'];
             $query="update tblorders set OrderNumber='$orderno',IsOrderPlaced='1' where UserId='$userid' and IsOrderPlaced is null;";
             $query="insert into tblorderaddresses(UserId,Ordernumber,Flatnobuldngno,StreetName,Area,Landmark,City,pincodes,latit,longit) values('$userid','$orderno','$fnaobno','$street','$area','$lndmark','$city','$pinc','$lati','$longi');";
 
-           $result = mysqli_multi_query($con, $query);
-if ($result) {
-
-echo '<script>alert("Your order placed successfully. Order number is "+"'.$orderno.'")</script>';
-echo "<script>window.location.href='my-order.php'</script>";
-
-            }
+			$result = mysqli_multi_query($con, $query);
+			$returnData=array();
+			if ($result) {
+				unset($_SESSION["cart_details"]);
+				$returnData["status"]="SUCCESS";
+				$returnData["order_number"]=$orderno;
+            } else{
+				$returnData["status"]="FAILURE";
+				$returnData["order_number"]=null;
+			}
+			print_r(json_encode($returnData));
+			return;
         }
        
 
@@ -342,7 +347,13 @@ echo "<script>window.location.href='my-order.php'</script>";
 				address.placeorder=1;
 				$.post("cart.php",address,
 				function(data, status){
-					location.reload();
+					var returnData=JSON.parse(data);
+					if(returnData.status=="SUCCESS"){
+						alert("Your order placed successfully. Order number is #"+returnData.order_number);
+						window.location.href='my-order.php';
+					} else{
+						alert("Internal Error! Please check back later");
+					}
 				});
 			});
 			return false;
